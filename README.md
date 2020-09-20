@@ -9,7 +9,7 @@ Data has been cleaned quite a bit, more cleaning can done via [pandas](https://p
 There are some incorrect values which were placed on the sites, eg 0 km for the car's distance travelled, or incorrect number for the price and model name, so have a look at the data before using it.
 
 
-Application uses [Ploty Dash](https://dash.plotly.com/introduction) which is a great tool to create interactive visualizations
+Application uses [Plotly Dash](https://dash.plotly.com/introduction) which is a great tool to create interactive visualizations
 
 ## Usage
 * Create a virtual environment ```python3 -m venv env3```
