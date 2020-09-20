@@ -16,7 +16,7 @@ Application uses [Plotly Dash](https://dash.plotly.com/introduction) which is a 
 ## Usage
 * Create a virtual environment ```python3 -m venv env3```
 
-* Install packages ```pip install -r requirements.txt``
+* Install packages ```pip install -r requirements.txt```
 
 * Activate virtual environment and Run ```python app.py```
 
