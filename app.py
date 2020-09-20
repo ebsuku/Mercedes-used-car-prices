@@ -74,6 +74,7 @@ app.layout = html.Div(
                 ),
             ]
         ),
+        html.Div([dcc.Graph(id="km-year")]),
         html.Table(id="table"),
     ]
 )
@@ -83,6 +84,7 @@ app.layout = html.Div(
     Output("price-year", "figure"),
     Output("price-km", "figure"),
     Output("table", "children"),
+    Output("km-year", "figure"),
     [Input("title", "value"), Input("model-choice", "value")],
 )
 def update_regions(text_value, choice_value):
@@ -105,7 +107,12 @@ def update_regions(text_value, choice_value):
         ),
     ]
     price_year = px.scatter(
-        filter_df, x="year", y="price", hover_data=["title"], title="Price Vs Year"
+        filter_df,
+        x="year",
+        y="price",
+        hover_data=["title"],
+        title="Price Vs Year",
+        color="km",
     )
     price_km = px.scatter(
         filter_df,
@@ -113,9 +120,18 @@ def update_regions(text_value, choice_value):
         y="price",
         hover_data=["title", "year"],
         title="Price Vs Kilometers",
+        color="year",
+    )
+    km_year = px.scatter(
+        filter_df,
+        x="km",
+        y="year",
+        hover_data=["title", "year"],
+        title="Kilometers Vs Year",
+        color="price",
     )
 
-    return price_year, price_km, table
+    return price_year, price_km, table, km_year
 
 
 if __name__ == "__main__":
