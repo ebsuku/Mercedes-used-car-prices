@@ -96,7 +96,7 @@ def update_regions(text_value, choice_value):
     if text_value != "":
         filter_df = filter_df[filter_df["title"].str.contains(text_value)]
 
-    sort_df = filter_df.sort_values(by=["price"])
+    sort_df = filter_df.sort_values(by=["year"])
     table = [
         html.Thead(html.Tr([html.Th(col) for col in sort_df.columns])),
         html.Tbody(
@@ -124,8 +124,8 @@ def update_regions(text_value, choice_value):
     )
     km_year = px.scatter(
         filter_df,
-        x="km",
-        y="year",
+        x="year",
+        y="km",
         hover_data=["title", "year"],
         title="Kilometers Vs Year",
         color="price",
