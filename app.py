@@ -10,23 +10,30 @@ external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 df = pd.read_csv("data/final.csv")
-df = df[["title", "price", "year", "km", "model", "url", "site"]]
+df["webpage"] = df["site"] + df["url"]
+df = df[["title", "price", "year", "km", "model", "webpage"]]
 
 
-filter_df = df[(df["year"] > 1980) & (df["km"] < 500000)]
-fig = px.scatter(filter_df, x="year", y="price", hover_data=["title"])
+car_models = df["model"].unique()
+model_options = [{"label": i, "value": i} for i in car_models]
+model_options += [{"label": "All", "value": ""}]
+model_options.sort(key=lambda x: x["value"])
 
 
 def generate_table(dataframe, max_rows=50):
+    """
+    Sort table from lowest to highest
+    """
+    sort_df = dataframe.sort(["price"], axis=1)
     return html.Table(
         [
-            html.Thead(html.Tr([html.Th(col) for col in dataframe.columns])),
+            html.Thead(html.Tr([html.Th(col) for col in sort_df.columns])),
             html.Tbody(
                 [
                     html.Tr(
-                        [html.Td(dataframe.iloc[i][col]) for col in dataframe.columns]
+                        [html.Td(dataframe.iloc[i][col]) for col in sort_df.columns]
                     )
-                    for i in range(min(len(dataframe), max_rows))
+                    for i in range(min(len(sort_df), max_rows))
                 ]
             ),
         ]
@@ -38,19 +45,77 @@ app.layout = html.Div(
         html.H1(
             children="Mercedes Benz Used Car Prices", style={"textAlign": "center"}
         ),
-        html.Div(["Input: ", dcc.Input(id="title", value="", type="text")]),
-        dcc.Graph(id="all-cars", figure=fig),
-        generate_table(filter_df),
+        html.Div(
+            [
+                html.Div(
+                    ["Search Title: ", dcc.Input(id="title", value="", type="text")],
+                    style={"width": "48%", "display": "inline-block"},
+                ),
+                html.Div(
+                    [
+                        "Car Class",
+                        dcc.Dropdown(
+                            id="model-choice", options=model_options, value=""
+                        ),
+                    ],
+                    style={"width": "48%", "display": "inline-block"},
+                ),
+            ]
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [dcc.Graph(id="price-year")],
+                    style={"width": "48%", "display": "inline-block"},
+                ),
+                html.Div(
+                    [dcc.Graph(id="price-km")],
+                    style={"width": "48%", "float": "right", "display": "inline-block"},
+                ),
+            ]
+        ),
+        html.Table(id="table"),
     ]
 )
 
 
 @app.callback(
-    Output(component_id="all-cars", component_property="children"),
-    [Input(component_id="title", component_property="value")],
+    Output("price-year", "figure"),
+    Output("price-km", "figure"),
+    Output("table", "children"),
+    [Input("title", "value"), Input("model-choice", "value")],
 )
-def update_graph(text_value):
-    return []
+def update_regions(text_value, choice_value):
+    filter_df = df[(df["year"] > 1980) & (df["km"] < 500000) & (df["price"] > 1000)]
+
+    if choice_value != "":
+        filter_df = filter_df[filter_df["model"] == choice_value]
+
+    if text_value != "":
+        filter_df = filter_df[filter_df["title"].str.contains(text_value)]
+
+    sort_df = filter_df.sort_values(by=["price"])
+    table = [
+        html.Thead(html.Tr([html.Th(col) for col in sort_df.columns])),
+        html.Tbody(
+            [
+                html.Tr([html.Td(sort_df.iloc[i][col]) for col in sort_df.columns])
+                for i in range(min(len(sort_df), 50))
+            ]
+        ),
+    ]
+    price_year = px.scatter(
+        filter_df, x="year", y="price", hover_data=["title"], title="Price Vs Year"
+    )
+    price_km = px.scatter(
+        filter_df,
+        x="km",
+        y="price",
+        hover_data=["title", "year"],
+        title="Price Vs Kilometers",
+    )
+
+    return price_year, price_km, table
 
 
 if __name__ == "__main__":
