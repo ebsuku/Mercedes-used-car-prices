@@ -98,37 +98,21 @@ app.layout = html.Div(
                 html.Div(className="column", children=[dcc.Graph(id="class-km")]),
             ],
         ),
+        html.H2("Specific Make", className="title"),
+        html.H2("Eg: E200", className="subtitle"),
         html.Div(
             [
                 html.Div(
-                    ["Search Title: ", dcc.Input(id="title", value="", type="text")],
+                    ["Search: ", dcc.Input(id="title", value="", type="text")],
                     style={"width": "48%", "display": "inline-block"},
-                ),
-                html.Div(
-                    [
-                        "Car Class",
-                        dcc.Dropdown(
-                            id="model-choice", options=model_options, value=""
-                        ),
-                    ],
-                    style={"width": "48%", "display": "inline-block"},
-                ),
+                )
             ]
         ),
         html.Div(
-            [
-                html.Div(
-                    [dcc.Graph(id="price-year")],
-                    style={"width": "48%", "display": "inline-block"},
-                ),
-                html.Div(
-                    [dcc.Graph(id="price-km")],
-                    style={"width": "48%", "float": "right", "display": "inline-block"},
-                ),
-            ]
+            className="columns",
+            children=[html.Div([dcc.Graph(id="search-graph")], className="column")],
         ),
-        html.Div([dcc.Graph(id="km-year")]),
-        html.Table(id="table"),
+        html.Table(id="search-table", className="table"),
     ]
 )
 
@@ -166,57 +150,37 @@ def update_class_graphs(year_value):
 
 
 @app.callback(
-    Output("price-year", "figure"),
-    Output("price-km", "figure"),
-    Output("table", "children"),
-    Output("km-year", "figure"),
-    [Input("title", "value"), Input("model-choice", "value")],
+    [Output("search-graph", "figure"), Output("search-table", "children")],
+    [Input("title", "value")],
 )
-def update_regions(text_value, choice_value):
-    filter_df = df[(df["year"] > 1980) & (df["km"] < 500000) & (df["price"] > 1000)]
+def update_search(search_text):
+    """
+    Update the table and the plot for search queries
+    """
+    if search_text != "":
+        filter_df = df[df["title"].str.contains(search_text)]
+    else:
+        filter_df = df
 
-    if choice_value != "":
-        filter_df = filter_df[filter_df["model"] == choice_value]
-
-    if text_value != "":
-        filter_df = filter_df[filter_df["title"].str.contains(text_value)]
-
-    sort_df = filter_df.sort_values(by=["year"])
     table = [
-        html.Thead(html.Tr([html.Th(col) for col in sort_df.columns])),
+        html.Thead(html.Tr([html.Th(col) for col in filter_df.columns])),
         html.Tbody(
             [
-                html.Tr([html.Td(sort_df.iloc[i][col]) for col in sort_df.columns])
-                for i in range(min(len(sort_df), 50))
+                html.Tr([html.Td(filter_df.iloc[i][col]) for col in filter_df.columns])
+                for i in range(min(len(filter_df), 50))
             ]
         ),
     ]
-    price_year = px.scatter(
-        filter_df,
-        x="year",
-        y="price",
-        hover_data=["title"],
-        title="Price Vs Year",
-        color="km",
-    )
-    price_km = px.scatter(
+    fig = px.scatter(
         filter_df,
         x="km",
         y="price",
-        hover_data=["title", "year"],
-        title="Price Vs Kilometers",
+        hover_data=["title"],
+        title="Price vs Kilometers Driven",
         color="year",
     )
-    km_year = px.scatter(
-        filter_df,
-        x="year",
-        y="km",
-        hover_data=["title", "year"],
-        title="Kilometers Vs Year",
-        color="price",
-    )
 
-    return price_year, price_km, table, km_year
+    return fig, table
 
 
 if __name__ == "__main__":
