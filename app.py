@@ -98,7 +98,7 @@ app.layout = html.Div(
                 html.Div(className="column", children=[dcc.Graph(id="class-km")]),
             ],
         ),
-        html.H2("Specific Make", className="title"),
+        html.H2("Specific Make and Model", className="title"),
         html.H2("Eg: E200", className="subtitle"),
         html.Div(
             [
@@ -106,6 +106,19 @@ app.layout = html.Div(
                     ["Search: ", dcc.Input(id="title", value="", type="text")],
                     style={"width": "48%", "display": "inline-block"},
                 )
+            ]
+        ),
+        html.Div(
+            children=[
+                "Select Year Ranges",
+                dcc.RangeSlider(
+                    id="year-range-slider",
+                    min=df["year"].min(),
+                    max=df["year"].max(),
+                    value=[df["year"].min(), df["year"].max()],
+                    marks={str(year): str(year) for year in df["year"].unique()},
+                    step=None,
+                ),
             ]
         ),
         html.Div(
@@ -151,9 +164,9 @@ def update_class_graphs(year_value):
 
 @app.callback(
     [Output("search-graph", "figure"), Output("search-table", "children")],
-    [Input("title", "value")],
+    [Input("title", "value"), Input("year-range-slider", "value")],
 )
-def update_search(search_text):
+def update_search(search_text, year_range):
     """
     Update the table and the plot for search queries
     """
@@ -161,6 +174,8 @@ def update_search(search_text):
         filter_df = df[df["title"].str.contains(search_text)]
     else:
         filter_df = df
+    filter_df = filter_df[(df["year"] > year_range[0]) & (df["year"] < year_range[1])]
+    filter_df = filter_df[filter_df["km"] > 0]
 
     table = [
         html.Thead(html.Tr([html.Th(col) for col in filter_df.columns])),
@@ -178,6 +193,7 @@ def update_search(search_text):
         hover_data=["title"],
         title="Price vs Kilometers Driven",
         color="year",
+        size="year",
     )
 
     return fig, table
